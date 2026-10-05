@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Smekensix</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .login-box {
+      width: 100%;
+      max-width: 400px;
+      background: #1e293b;
+      padding: 30px;
+      border-radius: 20px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin-bottom: 10px;
+    }
+
+    .welcome {
+      color: #cbd5e1;
+      margin-bottom: 25px;
+      line-height: 1.5;
+      font-size: 24px;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px;
+      margin: 8px 0;
+      border: 0;
+      border-radius: 10px;
+      font-size: 16px;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 15px;
+      border: 0;
+      border-radius: 10px;
+      background: #2563eb;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    #pesan {
+      margin-top: 15px;
+      color: #f87171;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="login-box">
+
+    <h1>🤖 AI Smekensix</h1>
+
+    <div class="welcome">
+      Selamat Datang di Website AI Smekensix Buatan Reno
+    </div>
+
+    <input
+      type="text"
+      id="username"
+      placeholder="Username"
+    >
+
+    <input
+      type="password"
+      id="password"
+      placeholder="Password"
+    >
+
+    <button onclick="login()">Masuk</button>
+
+    <div id="pesan"></div>
+
+  </div>
+
+  <script>
+    function login() {
+      const username =
+        document.getElementById("username").value;
+
+      const password =
+        document.getElementById("password").value;
+
+      if (username && password) {
+        document.getElementById("pesan").style.color = "#4ade80";
+        document.getElementById("pesan").textContent =
+          "Login berhasil. Sistem AI sedang disiapkan...";
+      } else {
+        document.getElementById("pesan").style.color = "#f87171";
+        document.getElementById("pesan").textContent =
+          "Username dan password wajib diisi.";
+      }
+    }
+  </script>
+
+</body>
+</html>

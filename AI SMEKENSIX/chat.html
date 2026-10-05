@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Smekensix</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: white;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    body.terang {
+      background: #f1f5f9;
+      color: #111827;
+    }
+
+    header {
+      padding: 15px;
+      background: #1e293b;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    body.terang header {
+      background: white;
+    }
+
+    .judul {
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .atas button {
+      width: auto;
+      padding: 8px 10px;
+      margin: 2px;
+    }
+
+    #chat {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+    }
+
+    .pesan {
+      max-width: 85%;
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 14px;
+      line-height: 1.5;
+    }
+
+    .ai {
+      background: #334155;
+      margin-right: auto;
+    }
+
+    .user {
+      background: #2563eb;
+      margin-left: auto;
+    }
+
+    body.terang .ai {
+      background: #e2e8f0;
+      color: #111827;
+    }
+
+    .foto {
+      max-width: 220px;
+      border-radius: 10px;
+      display: block;
+    }
+
+    .input-area {
+      padding: 10px;
+      background: #1e293b;
+    }
+
+    body.terang .input-area {
+      background: white;
+    }
+
+    .baris {
+      display: flex;
+      gap: 7px;
+    }
+
+    #inputPesan {
+      flex: 1;
+      padding: 13px;
+      border: 0;
+      border-radius: 10px;
+      font-size: 16px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 12px;
+      background: #2563eb;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .fitur {
+      display: flex;
+      gap: 7px;
+      margin-bottom: 8px;
+    }
+
+    .fitur button {
+      flex: 1;
+      background: #475569;
+    }
+
+    #fotoInput {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <div class="judul">🤖 AI Smekensix</div>
+
+    <div class="atas">
+      <button onclick="mode()">🌙</button>
+      <button onclick="hapusChat()">🗑️</button>
+    </div>
+  </header>
+
+  <div id="chat">
+    <div class="pesan ai">
+      Halo! Saya <b>AI Smekensix</b>.<br>
+      Ada yang bisa saya bantu?
+    </div>
+  </div>
+
+  <div class="input-area">
+
+    <div class="fitur">
+      <button onclick="mulaiMic()">🎤 Mic</button>
+
+      <button onclick="document.getElementById('fotoInput').click()">
+        📷 Foto Soal
+      </button>
+
+      <button onclick="bacaTerakhir()">
+        🔊 Pembaca
+      </button>
+    </div>
+
+    <input
+      type="file"
+      id="fotoInput"
+      accept="image/*"
+      capture="environment"
+      onchange="tampilkanFoto(event)"
+    >
+
+    <div class="baris">
+      <input
+        id="inputPesan"
+        type="text"
+        placeholder="Tulis pertanyaan..."
+        onkeydown="tekanEnter(event)"
+      >
+
+      <button onclick="kirimPesan()">Kirim</button>
+    </div>
+
+  </div>
+
+  <script>
+
+    let jawabanTerakhir =
+      "Halo! Saya AI Smekensix. Ada yang bisa saya bantu?";
+
+
+    // =========================
+    // KIRIM PESAN KE SERVER
+    // =========================
+
+    async function kirimPesan() {
+
+      const input =
+        document.getElementById("inputPesan");
+
+      const pesan =
+        input.value.trim();
+
+      if (!pesan) return;
+
+      const chat =
+        document.getElementById("chat");
+
+      chat.innerHTML += `
+        <div class="pesan user">
+          ${aman(pesan)}
+        </div>
+      `;
+
+      input.value = "";
+
+      chat.innerHTML += `
+        <div class="pesan ai" id="loading">
+          ⏳ AI Smekensix sedang berpikir...
+        </div>
+      `;
+
+      chat.scrollTop = chat.scrollHeight;
+
+      try {
+
+        const response = await fetch(
+          "http://localhost:3000/api/chat",
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+              message: pesan
+            })
+          }
+        );
+
+        const data =
+          await response.json();
+
+        const loading =
+          document.getElementById("loading");
+
+        if (loading) {
+          loading.remove();
+        }
+
+        jawabanTerakhir =
+          data.reply ||
+          data.error ||
+          "AI tidak memberikan jawaban.";
+
+        chat.innerHTML += `
+          <div class="pesan ai">
+            ${aman(jawabanTerakhir)}
+            <br><br>
+            <button onclick="bacaTerakhir()">
+              🔊 Baca
+            </button>
+          </div>
+        `;
+
+      } catch (error) {
+
+        const loading =
+          document.getElementById("loading");
+
+        if (loading) {
+          loading.remove();
+        }
+
+        jawabanTerakhir =
+          "Tidak bisa terhubung ke server AI Smekensix.";
+
+        chat.innerHTML += `
+          <div class="pesan ai">
+            ❌ ${jawabanTerakhir}
+          </div>
+        `;
+      }
+
+      chat.scrollTop =
+        chat.scrollHeight;
+    }
+
+
+    // =========================
+    // ENTER
+    // =========================
+
+    function tekanEnter(event) {
+
+      if (event.key === "Enter") {
+        kirimPesan();
+      }
+    }
+
+
+    // =========================
+    // HAPUS CHAT
+    // =========================
+
+    function hapusChat() {
+
+      if (confirm("Hapus semua percakapan?")) {
+
+        document.getElementById("chat").innerHTML = `
+          <div class="pesan ai">
+            Percakapan sudah dihapus.
+          </div>
+        `;
+
+        jawabanTerakhir =
+          "Percakapan sudah dihapus.";
+      }
+    }
+
+
+    // =========================
+    // MODE TERANG / GELAP
+    // =========================
+
+    function mode() {
+
+      document.body.classList.toggle("terang");
+
+      const tombol =
+        document.querySelector(".atas button");
+
+      if (
+        document.body.classList.contains("terang")
+      ) {
+
+        tombol.textContent = "☀️";
+
+      } else {
+
+        tombol.textContent = "🌙";
+      }
+    }
+
+
+    // =========================
+    // FOTO SOAL
+    // =========================
+
+    function tampilkanFoto(event) {
+
+      const file =
+        event.target.files[0];
+
+      if (!file) return;
+
+      const url =
+        URL.createObjectURL(file);
+
+      document.getElementById("chat").innerHTML += `
+        <div class="pesan user">
+          📷 Foto soal:
+          <br><br>
+          <img src="${url}" class="foto">
+        </div>
+      `;
+    }
+
+
+    // =========================
+    // MIC
+    // =========================
+
+    function mulaiMic() {
+
+      const SpeechRecognition =
+        window.SpeechRecognition ||
+        window.webkitSpeechRecognition;
+
+      if (!SpeechRecognition) {
+
+        alert(
+          "Browser ini belum mendukung fitur mic."
+        );
+
+        return;
+      }
+
+      const recognition =
+        new SpeechRecognition();
+
+      recognition.lang =
+        "id-ID";
+
+      recognition.start();
+
+      recognition.onresult =
+        function(event) {
+
+          document.getElementById(
+            "inputPesan"
+          ).value =
+            event.results[0][0].transcript;
+        };
+    }
+
+
+    // =========================
+    // PEMBACA SUARA
+    // =========================
+
+    function bacaTerakhir() {
+
+      if (!jawabanTerakhir) return;
+
+      bacaTeks(jawabanTerakhir);
+    }
+
+
+    function bacaTeks(teks) {
+
+      if (!("speechSynthesis" in window)) {
+
+        alert(
+          "Perangkat ini tidak mendukung pembaca suara."
+        );
+
+        return;
+      }
+
+      speechSynthesis.cancel();
+
+      const suara =
+        new SpeechSynthesisUtterance(teks);
+
+      suara.lang =
+        "id-ID";
+
+      suara.rate = 1;
+
+      suara.pitch = 1;
+
+      speechSynthesis.speak(suara);
+    }
+
+
+    // =========================
+    // KEAMANAN TEKS
+    // =========================
+
+    function aman(teks) {
+
+      return teks
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+  </script>
+
+</body>
+</html>

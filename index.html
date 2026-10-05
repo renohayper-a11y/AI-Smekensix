@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>AI Smekensix</title>
+
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<h1>🤖 AI Smekensix</h1>
+
+<button onclick="bukaPengaturan()" id="setting">
+⚙️ Pengaturan
+</button>
+
+<div id="chat">
+
+<div class="bot">
+Halo 👋 Saya Smekensix!
+</div>
+
+</div>
+
+<div class="bawah">
+
+<label for="foto" class="tombol-foto">📷</label>
+
+<input
+type="file"
+id="foto"
+accept="image/*"
+style="display:none"
+>
+
+<input
+id="pertanyaan"
+placeholder="Tulis pesan..."
+>
+
+<button onclick="kirim()">Kirim</button>
+
+<button onclick="hapusRiwayat()">Hapus</button>
+
+</div>
+
+
+<div id="pengaturan">
+
+<div class="kotak-pengaturan">
+
+<h2>⚙️ Pengaturan</h2>
+
+<button onclick="modeGelap()">
+🌙 Mode Gelap
+</button>
+
+<br><br>
+
+<button onclick="tesSuara()">
+🔊 Tes Suara
+</button>
+
+<br><br>
+
+<button onclick="tentangSmekensix()">
+ℹ️ Tentang
+</button>
+
+<br><br>
+
+<button onclick="tutupPengaturan()">
+Tutup
+</button>
+
+</div>
+
+</div>
+
+
+<script src="script.js"></script>
+
+<script>
+
+function bukaPengaturan() {
+
+    document.getElementById("pengaturan").style.display = "flex";
+
+}
+
+
+function tutupPengaturan() {
+
+    document.getElementById("pengaturan").style.display = "none";
+
+}
+
+
+function modeGelap() {
+
+    document.body.classList.toggle("gelap");
+
+}
+
+
+function tesSuara() {
+
+    if (!("speechSynthesis" in window)) {
+
+        alert("Chrome di HP ini tidak mendukung suara.");
+
+        return;
+
+    }
+
+    window.speechSynthesis.cancel();
+
+    let suara = new SpeechSynthesisUtterance(
+        "Halo. Saya Smekensix. Saya siap membantu kamu."
+    );
+
+    suara.lang = "id-ID";
+    suara.rate = 0.9;
+
+    window.speechSynthesis.speak(suara);
+
+}
+
+
+function tentangSmekensix() {
+
+    alert(
+        "AI Smekensix\n\n" +
+        "Asisten AI pintar untuk membantu menjawab pertanyaan,\n" +
+        "menganalisis gambar, dan membantu berbagai kebutuhan kamu.\n\n" +
+        "Versi 1.0"
+    );
+
+}
+
+</script>
+
+</body>
+</html>
