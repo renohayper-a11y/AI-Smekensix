@@ -1,6 +1,8 @@
 module.exports = async (req, res) => {
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method tidak diizinkan" });
+    return res.status(405).json({
+      error: "Method tidak diizinkan"
+    });
   }
 
   try {
@@ -12,9 +14,18 @@ module.exports = async (req, res) => {
       });
     }
 
-    if (!process.env.OPENROUTER_API_KEY) {
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    const model = process.env.OPENROUTER_MODEL;
+
+    if (!apiKey) {
       return res.status(500).json({
-        error: "API Key OpenRouter belum dipasang"
+        error: "API Key OpenRouter belum dipasang di Vercel"
+      });
+    }
+
+    if (!model) {
+      return res.status(500).json({
+        error: "Model OpenRouter belum dipasang di Vercel"
       });
     }
 
@@ -23,12 +34,12 @@ module.exports = async (req, res) => {
       {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "Authorization": `Bearer ${apiKey}`,
           "Content-Type": "application/json",
           "X-Title": "AI Smekensix"
         },
         body: JSON.stringify({
-          model: process.env.OPENROUTER_MODEL,
+          model: model,
           messages: [
             {
               role: "system",
@@ -54,7 +65,7 @@ module.exports = async (req, res) => {
 
     return res.status(200).json({
       reply:
-        data.choices?.[0]?.message?.content ||
+        data?.choices?.[0]?.message?.content ||
         "AI tidak memberikan jawaban."
     });
 
