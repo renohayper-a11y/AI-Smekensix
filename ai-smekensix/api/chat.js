@@ -1,16 +1,14 @@
 module.exports = async (req, res) => {
   if (req.method !== "POST") {
-    return res.status(405).json({
-      error: "Method tidak diizinkan"
-    });
+    return res.status(405).json({ error: "Method tidak diizinkan" });
   }
 
   try {
-    const { message } = req.body || {};
+    const { message, image } = req.body || {};
 
-    if (!message) {
+    if (!message && !image) {
       return res.status(400).json({
-        error: "Pesan belum diisi"
+        error: "Pesan atau foto belum dikirim"
       });
     }
 
@@ -19,14 +17,31 @@ module.exports = async (req, res) => {
 
     if (!apiKey) {
       return res.status(500).json({
-        error: "API Key OpenRouter belum dipasang di Vercel"
+        error: "API Key OpenRouter belum dipasang"
       });
     }
 
     if (!model) {
       return res.status(500).json({
-        error: "Model OpenRouter belum dipasang di Vercel"
+        error: "Model OpenRouter belum dipasang"
       });
+    }
+
+    let userContent = message || "Baca foto ini dan jawab dengan jelas.";
+
+    if (image) {
+      userContent = [
+        {
+          type: "text",
+          text: message || "Baca foto soal ini dan jawab dengan jelas dalam bahasa Indonesia."
+        },
+        {
+          type: "image_url",
+          image_url: {
+            url: image
+          }
+        }
+      ];
     }
 
     const response = await fetch(
@@ -34,7 +49,7 @@ module.exports = async (req, res) => {
       {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${apiKey}`,
+          "Authorization": "Bearer " + apiKey,
           "Content-Type": "application/json",
           "X-Title": "AI Smekensix"
         },
@@ -43,12 +58,11 @@ module.exports = async (req, res) => {
           messages: [
             {
               role: "system",
-              content:
-                "Kamu adalah AI Smekensix buatan Reno. Jawab dengan jelas, ramah, dan membantu dalam bahasa Indonesia."
+              content: "Kamu adalah AI Smekensix buatan Reno. Jawab dengan jelas, ramah, dan membantu dalam bahasa Indonesia."
             },
             {
               role: "user",
-              content: message
+              content: userContent
             }
           ]
         })
@@ -64,9 +78,7 @@ module.exports = async (req, res) => {
     }
 
     return res.status(200).json({
-      reply:
-        data?.choices?.[0]?.message?.content ||
-        "AI tidak memberikan jawaban."
+      reply: data?.choices?.[0]?.message?.content || "AI tidak memberikan jawaban."
     });
 
   } catch (error) {
