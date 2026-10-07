@@ -1,148 +1,134 @@
 <!DOCTYPE html>
 <html lang="id">
-
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Smekensix</title>
 
-<title>AI Smekensix</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
 
-<link rel="stylesheet" href="style.css">
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .login-box {
+      width: 100%;
+      max-width: 400px;
+      background: #1e293b;
+      padding: 30px;
+      border-radius: 20px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin-bottom: 10px;
+    }
+
+    .welcome {
+      color: #cbd5e1;
+      margin-bottom: 25px;
+      line-height: 1.5;
+      font-size: 24px;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px;
+      margin: 8px 0;
+      border: 0;
+      border-radius: 10px;
+      font-size: 16px;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 15px;
+      border: 0;
+      border-radius: 10px;
+      background: #2563eb;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #pesan {
+      margin-top: 15px;
+      color: #f87171;
+    }
+  </style>
 </head>
 
 <body>
 
-<h1>🤖 AI Smekensix</h1>
+  <div class="login-box">
 
-<button onclick="bukaPengaturan()" id="setting">
-⚙️ Pengaturan
-</button>
+    <h1>🤖 AI Smekensix</h1>
 
-<div id="chat">
+    <div class="welcome">
+      Selamat Datang di Website AI Smekensix Buatan Reno
+    </div>
 
-<div class="bot">
-Halo 👋 Saya Smekensix!
-</div>
+    <input
+      type="text"
+      id="username"
+      placeholder="Username"
+    >
 
-</div>
+    <input
+      type="password"
+      id="password"
+      placeholder="Password"
+    >
 
-<div class="bawah">
+    <button onclick="login()">Masuk</button>
 
-<label for="foto" class="tombol-foto">📷</label>
+    <div id="pesan"></div>
 
-<input
-type="file"
-id="foto"
-accept="image/*"
-style="display:none"
->
+  </div>
 
-<input
-id="pertanyaan"
-placeholder="Tulis pesan..."
->
+  <script>
+    function login() {
 
-<button onclick="kirim()">Kirim</button>
+      const username =
+        document.getElementById("username").value.trim();
 
-<button onclick="hapusRiwayat()">Hapus</button>
+      const password =
+        document.getElementById("password").value;
 
-</div>
+      if (username === "renoadmin" && password === "reno") {
 
+        document.getElementById("pesan").style.color = "#4ade80";
 
-<div id="pengaturan">
+        document.getElementById("pesan").textContent =
+          "Login berhasil. Membuka AI Smekensix...";
 
-<div class="kotak-pengaturan">
+        setTimeout(function() {
+          window.location.href = "chat.html";
+        }, 700);
 
-<h2>⚙️ Pengaturan</h2>
+      } else {
 
-<button onclick="modeGelap()">
-🌙 Mode Gelap
-</button>
+        document.getElementById("pesan").style.color = "#f87171";
 
-<br><br>
-
-<button onclick="tesSuara()">
-🔊 Tes Suara
-</button>
-
-<br><br>
-
-<button onclick="tentangSmekensix()">
-ℹ️ Tentang
-</button>
-
-<br><br>
-
-<button onclick="tutupPengaturan()">
-Tutup
-</button>
-
-</div>
-
-</div>
-
-
-<script src="script.js"></script>
-
-<script>
-
-function bukaPengaturan() {
-
-    document.getElementById("pengaturan").style.display = "flex";
-
-}
-
-
-function tutupPengaturan() {
-
-    document.getElementById("pengaturan").style.display = "none";
-
-}
-
-
-function modeGelap() {
-
-    document.body.classList.toggle("gelap");
-
-}
-
-
-function tesSuara() {
-
-    if (!("speechSynthesis" in window)) {
-
-        alert("Chrome di HP ini tidak mendukung suara.");
-
-        return;
-
+        document.getElementById("pesan").textContent =
+          "Username atau password salah.";
+      }
     }
-
-    window.speechSynthesis.cancel();
-
-    let suara = new SpeechSynthesisUtterance(
-        "Halo. Saya Smekensix. Saya siap membantu kamu."
-    );
-
-    suara.lang = "id-ID";
-    suara.rate = 0.9;
-
-    window.speechSynthesis.speak(suara);
-
-}
-
-
-function tentangSmekensix() {
-
-    alert(
-        "AI Smekensix\n\n" +
-        "Asisten AI pintar untuk membantu menjawab pertanyaan,\n" +
-        "menganalisis gambar, dan membantu berbagai kebutuhan kamu.\n\n" +
-        "Versi 1.0"
-    );
-
-}
-
-</script>
+  </script>
 
 </body>
 </html>
