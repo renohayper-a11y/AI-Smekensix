@@ -62,6 +62,7 @@
       color: white;
       font-size: 16px;
       font-weight: bold;
+      cursor: pointer;
     }
 
     #pesan {
@@ -78,7 +79,7 @@
     <h1>🤖 AI Smekensix</h1>
 
     <div class="welcome">
-      Selamat Datang di Website AI Smekensix Buatan Reno 
+      Selamat Datang di Website AI Smekensix Buatan Reno
     </div>
 
     <input
@@ -101,20 +102,30 @@
 
   <script>
     function login() {
+
       const username =
-        document.getElementById("username").value;
+        document.getElementById("username").value.trim();
 
       const password =
         document.getElementById("password").value;
 
-      if (username && password) {
+      if (username === "renoadmin" && password === "reno") {
+
         document.getElementById("pesan").style.color = "#4ade80";
+
         document.getElementById("pesan").textContent =
-          "Login berhasil. Sistem AI sedang disiapkan...";
+          "Login berhasil. Membuka AI Smekensix...";
+
+        setTimeout(function() {
+          window.location.href = "chat.html";
+        }, 700);
+
       } else {
+
         document.getElementById("pesan").style.color = "#f87171";
+
         document.getElementById("pesan").textContent =
-          "Username dan password wajib diisi.";
+          "Username atau password salah.";
       }
     }
   </script>
