@@ -35,15 +35,18 @@ module.exports = async (req, res) => {
       });
     }
 
-    let userContent = message || "Jawab dengan jelas dalam bahasa Indonesia.";
+    let userContent =
+      message ||
+      "Jawab dengan jelas dalam bahasa Indonesia.";
 
+    // FOTO
     if (image) {
       userContent = [
         {
           type: "text",
           text:
             message ||
-            "Baca foto soal ini dan jawab dalam bahasa Indonesia. Gunakan teks biasa. Jangan gunakan Markdown dan jangan gunakan simbol bintang."
+            "Baca foto soal ini dan jawab dalam bahasa Indonesia. Gunakan teks biasa. Jangan gunakan simbol bintang."
         },
         {
           type: "image_url",
@@ -54,10 +57,12 @@ module.exports = async (req, res) => {
       ];
     }
 
+    // FILE
     if (fileData) {
       const nama = fileName || "file";
       const tipe = fileType || "";
 
+      // GAMBAR
       if (tipe.startsWith("image/")) {
         userContent = [
           {
@@ -65,7 +70,7 @@ module.exports = async (req, res) => {
             text:
               "Baca dan analisis file gambar " +
               nama +
-              ". Jawab dalam bahasa Indonesia. Gunakan teks biasa. Jangan gunakan Markdown dan jangan gunakan simbol bintang."
+              ". Jawab dalam bahasa Indonesia dengan jelas. Jangan gunakan simbol bintang."
           },
           {
             type: "image_url",
@@ -74,14 +79,40 @@ module.exports = async (req, res) => {
             }
           }
         ];
-      } else if (
+      }
+
+      // PDF
+      else if (
+        tipe === "application/pdf" ||
+        nama.toLowerCase().endsWith(".pdf")
+      ) {
+        userContent = [
+          {
+            type: "text",
+            text:
+              "Baca file PDF bernama " +
+              nama +
+              ". Jelaskan dan jawab isi atau pertanyaan dari file tersebut dalam bahasa Indonesia. Jangan gunakan Markdown dan jangan gunakan simbol bintang."
+          },
+          {
+            type: "file",
+            file: {
+              filename: nama,
+              file_data: fileData
+            }
+          }
+        ];
+      }
+
+      // FILE TEKS
+      else if (
         tipe.startsWith("text/") ||
-        nama.endsWith(".txt") ||
-        nama.endsWith(".csv") ||
-        nama.endsWith(".html") ||
-        nama.endsWith(".css") ||
-        nama.endsWith(".js") ||
-        nama.endsWith(".json")
+        nama.toLowerCase().endsWith(".txt") ||
+        nama.toLowerCase().endsWith(".csv") ||
+        nama.toLowerCase().endsWith(".html") ||
+        nama.toLowerCase().endsWith(".css") ||
+        nama.toLowerCase().endsWith(".js") ||
+        nama.toLowerCase().endsWith(".json")
       ) {
         const bagian = fileData.split(",")[1] || "";
 
@@ -91,18 +122,21 @@ module.exports = async (req, res) => {
         ).toString("utf8");
 
         userContent =
-          "Baca file berikut dan bantu saya menjawab atau menganalisisnya.\n\n" +
+          "Baca dan analisis file berikut.\n\n" +
           "Nama file: " +
           nama +
           "\n\nIsi file:\n" +
           isiFile;
-      } else {
+      }
+
+      // FILE LAIN
+      else {
         userContent =
           "Saya mengunggah file bernama " +
           nama +
           ". Jenis file: " +
           tipe +
-          ". Jelaskan apakah file ini dapat diproses dan apa yang perlu dilakukan untuk membacanya.";
+          ". Jelaskan isi atau kegunaan file tersebut jika dapat diproses.";
       }
     }
 
@@ -130,6 +164,12 @@ module.exports = async (req, res) => {
               role: "user",
               content: userContent
             }
+          ],
+
+          plugins: [
+            {
+              id: "file-parser"
+            }
           ]
         })
       }
@@ -149,6 +189,7 @@ module.exports = async (req, res) => {
       data?.choices?.[0]?.message?.content ||
       "AI tidak memberikan jawaban.";
 
+    // HAPUS SEMUA SIMBOL BINTANG
     reply = String(reply).replace(
       /[*＊★☆✱✲✳✴✵✶✷✸✹✺✻✼✽✾✿]/g,
       ""
@@ -163,6 +204,7 @@ module.exports = async (req, res) => {
 
     return res.status(500).json({
       error:
+        error?.message ||
         "Server AI Smekensix mengalami kesalahan"
     });
   }
