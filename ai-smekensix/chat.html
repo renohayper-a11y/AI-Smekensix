@@ -60,6 +60,7 @@
       margin: 10px 0;
       border-radius: 14px;
       line-height: 1.5;
+      overflow-wrap: break-word;
     }
 
     .ai {
@@ -79,8 +80,14 @@
 
     .foto {
       max-width: 220px;
+      max-height: 300px;
       border-radius: 10px;
       display: block;
+    }
+
+    .nama-file {
+      font-weight: bold;
+      word-break: break-all;
     }
 
     .input-area {
@@ -124,9 +131,11 @@
     .fitur button {
       flex: 1;
       background: #475569;
+      font-size: 13px;
     }
 
-    #fotoInput {
+    #fotoInput,
+    #fileInput {
       display: none;
     }
   </style>
@@ -153,15 +162,23 @@
   <div class="input-area">
 
     <div class="fitur">
-      <button onclick="mulaiMic()">🎤 Mic</button>
+
+      <button onclick="mulaiMic()">
+        🎤 Mic
+      </button>
 
       <button onclick="document.getElementById('fotoInput').click()">
         📷 Foto Soal
       </button>
 
+      <button onclick="document.getElementById('fileInput').click()">
+        📎 Upload File
+      </button>
+
       <button onclick="bacaTerakhir()">
         🔊 Pembaca
       </button>
+
     </div>
 
     <input
@@ -169,10 +186,17 @@
       id="fotoInput"
       accept="image/*"
       capture="environment"
-      onchange="tampilkanFoto(event)"
+      onchange="kirimFoto(event)"
+    >
+
+    <input
+      type="file"
+      id="fileInput"
+      onchange="pilihFile(event)"
     >
 
     <div class="baris">
+
       <input
         id="inputPesan"
         type="text"
@@ -180,7 +204,10 @@
         onkeydown="tekanEnter(event)"
       >
 
-      <button onclick="kirimPesan()">Kirim</button>
+      <button onclick="kirimPesan()">
+        Kirim
+      </button>
+
     </div>
 
   </div>
@@ -192,7 +219,7 @@
 
 
     // =========================
-    // KIRIM PESAN KE SERVER
+    // KIRIM PESAN
     // =========================
 
     async function kirimPesan() {
@@ -216,30 +243,45 @@
 
       input.value = "";
 
+      await kirimKeAI({
+        message: pesan
+      });
+    }
+
+
+    // =========================
+    // KIRIM KE AI
+    // =========================
+
+    async function kirimKeAI(dataKirim) {
+
+      const chat =
+        document.getElementById("chat");
+
       chat.innerHTML += `
         <div class="pesan ai" id="loading">
           ⏳ AI Smekensix sedang berpikir...
         </div>
       `;
 
-      chat.scrollTop = chat.scrollHeight;
+      chat.scrollTop =
+        chat.scrollHeight;
 
       try {
 
-        const response = await fetch(
-          "/api/chat",
-          {
-            method: "POST",
+        const response =
+          await fetch(
+            "/api/chat",
+            {
+              method: "POST",
 
-            headers: {
-              "Content-Type": "application/json"
-            },
+              headers: {
+                "Content-Type": "application/json"
+              },
 
-            body: JSON.stringify({
-              message: pesan
-            })
-          }
-        );
+              body: JSON.stringify(dataKirim)
+            }
+          );
 
         const data =
           await response.json();
@@ -350,23 +392,98 @@
     // FOTO SOAL
     // =========================
 
-    function tampilkanFoto(event) {
+    async function kirimFoto(event) {
 
       const file =
         event.target.files[0];
 
       if (!file) return;
 
+      const chat =
+        document.getElementById("chat");
+
       const url =
         URL.createObjectURL(file);
 
-      document.getElementById("chat").innerHTML += `
+      chat.innerHTML += `
         <div class="pesan user">
           📷 Foto soal:
           <br><br>
           <img src="${url}" class="foto">
         </div>
       `;
+
+      const reader =
+        new FileReader();
+
+      reader.onload = async function() {
+
+        await kirimKeAI({
+          message:
+            "Baca foto soal ini dan jawab dalam bahasa Indonesia.",
+          image:
+            reader.result
+        });
+
+      };
+
+      reader.readAsDataURL(file);
+
+      event.target.value = "";
+    }
+
+
+    // =========================
+    // UPLOAD FILE
+    // =========================
+
+    async function pilihFile(event) {
+
+      const file =
+        event.target.files[0];
+
+      if (!file) return;
+
+      const chat =
+        document.getElementById("chat");
+
+      chat.innerHTML += `
+        <div class="pesan user">
+          📎 File:
+          <br>
+          <span class="nama-file">
+            ${aman(file.name)}
+          </span>
+        </div>
+      `;
+
+      /*
+        Untuk saat ini file dikirim sebagai data
+        ke server. Server perlu mendukung format
+        file tersebut agar AI dapat membacanya.
+      */
+
+      const reader =
+        new FileReader();
+
+      reader.onload = async function() {
+
+        await kirimKeAI({
+          message:
+            "Baca dan analisis file ini. Jawab dalam bahasa Indonesia dengan jelas.",
+          fileName:
+            file.name,
+          fileType:
+            file.type,
+          fileData:
+            reader.result
+        });
+
+      };
+
+      reader.readAsDataURL(file);
+
+      event.target.value = "";
     }
 
 
@@ -404,6 +521,7 @@
             "inputPesan"
           ).value =
             event.results[0][0].transcript;
+
         };
     }
 
@@ -439,9 +557,11 @@
       suara.lang =
         "id-ID";
 
-      suara.rate = 1;
+      suara.rate =
+        1;
 
-      suara.pitch = 1;
+      suara.pitch =
+        1;
 
       speechSynthesis.speak(suara);
     }
@@ -453,7 +573,7 @@
 
     function aman(teks) {
 
-      return teks
+      return String(teks)
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
