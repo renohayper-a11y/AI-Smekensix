@@ -1,6 +1,8 @@
 module.exports = async (req, res) => {
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method tidak diizinkan" });
+    return res.status(405).json({
+      error: "Method tidak diizinkan"
+    });
   }
 
   try {
@@ -33,7 +35,7 @@ module.exports = async (req, res) => {
       userContent = [
         {
           type: "text",
-          text: message || "Baca foto soal ini dan jawab dengan jelas dalam bahasa Indonesia."
+          text: "Baca foto soal ini dan jawab dalam bahasa Indonesia. Gunakan teks biasa. Jangan gunakan Markdown dan jangan gunakan simbol bintang."
         },
         {
           type: "image_url",
@@ -58,7 +60,7 @@ module.exports = async (req, res) => {
           messages: [
             {
               role: "system",
-              content: "Kamu adalah AI Smekensix buatan Reno. Jawab dengan jelas, ramah, dan membantu dalam bahasa Indonesia."
+              content: "Kamu adalah AI Smekensix buatan Reno. Jawab dalam bahasa Indonesia dengan jelas dan membantu. Gunakan teks biasa. Jangan gunakan Markdown. Jangan gunakan tanda bintang atau simbol bintang."
             },
             {
               role: "user",
@@ -77,8 +79,18 @@ module.exports = async (req, res) => {
       });
     }
 
+    let reply =
+      data?.choices?.[0]?.message?.content ||
+      "AI tidak memberikan jawaban.";
+
+    // Menghapus semua jenis tanda bintang
+    reply = String(reply).replace(
+      /[*＊★☆✱✲✳✴✵✶✷✸✹✺✻✼✽✾✿]/g,
+      ""
+    );
+
     return res.status(200).json({
-      reply: data?.choices?.[0]?.message?.content || "AI tidak memberikan jawaban."
+      reply: reply.trim()
     });
 
   } catch (error) {
