@@ -22,36 +22,100 @@ module.exports = async (req, res) => {
     }
 
     const token = process.env.CLOUDFLARE_API_TOKEN;
-
     const accountId =
       "286bedaef1027dcf1e11660acbe57c01";
 
     if (!token) {
       return res.status(500).json({
-        error: "Token Cloudflare belum dipasang di Vercel"
+        error: "Token Cloudflare belum dipasang"
       });
     }
 
     let prompt = message || "";
 
-    if (image || fileData) {
-      return res.status(400).json({
-        error: "Untuk sementara, kirim pertanyaan berupa teks saja. Fitur foto dan PDF belum diaktifkan pada Cloudflare."
+    // Foto atau file gambar
+    let gambar = image || "";
+
+    if (fileData && (fileType || "").startsWith("image/")) {
+      gambar = fileData;
+    }
+
+    if (gambar) {
+      const hasil = await fetch(
+        "https://api.cloudflare.com/client/v4/accounts/" +
+          accountId +
+          "/ai/run/@cf/llava-hf/llava-1.5-7b-hf",
+        {
+          method: "POST",
+          headers: {
+            Authorization: "Bearer " + token,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            image: gambar.replace(
+              /^data:image\/[^;]+;base64,/,
+              ""
+            ),
+            prompt:
+              prompt ||
+              "Baca foto soal ini dan jawab dalam bahasa Indonesia."
+          })
+        }
+      );
+
+      const data = await hasil.json();
+
+      if (!hasil.ok || !data.success) {
+        return res.status(502).json({
+          error:
+            data.errors?.map(e => e.message).join(", ") ||
+            "Gagal membaca foto"
+        });
+      }
+
+      let reply =
+        data.result?.description ||
+        data.result?.response ||
+        "Foto diterima, tetapi AI belum memberikan jawaban.";
+
+      reply = String(reply).replace(
+        /[*＊★☆✱✲✳✴✵✶✷✸✹✺✻✼✽✾✿]/g,
+        ""
+      );
+
+      return res.status(200).json({
+        reply: reply.trim()
       });
     }
 
-    if (fileName) {
-      prompt += "\nNama file: " + fileName;
+    // PDF belum diaktifkan pada langkah ini
+    if (
+      fileData &&
+      (
+        (fileType || "") === "application/pdf" ||
+        (fileName || "").toLowerCase().endsWith(".pdf")
+      )
+    ) {
+      return res.status(400).json({
+        error: "Fitur PDF sedang disiapkan. Chat teks tetap bisa digunakan."
+      });
     }
 
-    const response = await fetch(
+    if (fileData) {
+      return res.status(400).json({
+        error: "Jenis file ini belum didukung."
+      });
+    }
+
+    // Chat teks
+    const hasil = await fetch(
       "https://api.cloudflare.com/client/v4/accounts/" +
         accountId +
         "/ai/run/@cf/meta/llama-3.1-8b-instruct-fp8",
       {
         method: "POST",
         headers: {
-          "Authorization": "Bearer " + token,
+          Authorization: "Bearer " + token,
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
@@ -59,7 +123,7 @@ module.exports = async (req, res) => {
             {
               role: "system",
               content:
-                "Kamu adalah AI Smekensix buatan Reno. Jawab dengan jelas, ramah, dan membantu dalam bahasa Indonesia. Gunakan teks biasa tanpa simbol bintang."
+                "Kamu adalah AI Smekensix buatan Reno. Jawab dengan jelas dan ramah dalam bahasa Indonesia. Gunakan teks biasa tanpa simbol bintang."
             },
             {
               role: "user",
@@ -71,9 +135,9 @@ module.exports = async (req, res) => {
       }
     );
 
-    const data = await response.json();
+    const data = await hasil.json();
 
-    if (!response.ok || !data.success) {
+    if (!hasil.ok || !data.success) {
       return res.status(502).json({
         error:
           data.errors?.map(e => e.message).join(", ") ||
@@ -81,7 +145,9 @@ module.exports = async (req, res) => {
       });
     }
 
-    let reply = data.result?.response || "AI belum memberikan jawaban.";
+    let reply =
+      data.result?.response ||
+      "AI belum memberikan jawaban.";
 
     reply = String(reply).replace(
       /[*＊★☆✱✲✳✴✵✶✷✸✹✺✻✼✽✾✿]/g,
@@ -100,3 +166,4 @@ module.exports = async (req, res) => {
     });
   }
 };
+            
