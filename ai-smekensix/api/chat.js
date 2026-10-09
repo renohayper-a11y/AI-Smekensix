@@ -1,7 +1,8 @@
+
 module.exports = async (req, res) => {
   if (req.method !== "POST") {
     return res.status(405).json({
-      error: "Method tidak diizinkan"
+      error: "Metode tidak diizinkan"
     });
   }
 
@@ -16,180 +17,72 @@ module.exports = async (req, res) => {
 
     if (!message && !image && !fileData) {
       return res.status(400).json({
-        error: "Pesan, foto, atau file belum dikirim"
+        error: "Pesan belum dikirim"
       });
     }
 
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    const model = process.env.OPENROUTER_MODEL;
+    const token = process.env.CLOUDFLARE_API_TOKEN;
 
-    if (!apiKey) {
+    const accountId =
+      "286bedaef1027dcf1e11660acbe57c01";
+
+    if (!token) {
       return res.status(500).json({
-        error: "API Key OpenRouter belum dipasang"
+        error: "Token Cloudflare belum dipasang di Vercel"
       });
     }
 
-    if (!model) {
-      return res.status(500).json({
-        error: "Model OpenRouter belum dipasang"
+    let prompt = message || "";
+
+    if (image || fileData) {
+      return res.status(400).json({
+        error: "Untuk sementara, kirim pertanyaan berupa teks saja. Fitur foto dan PDF belum diaktifkan pada Cloudflare."
       });
     }
 
-    let userContent =
-      message ||
-      "Jawab dengan jelas dalam bahasa Indonesia.";
-
-    // FOTO
-    if (image) {
-      userContent = [
-        {
-          type: "text",
-          text:
-            message ||
-            "Baca foto soal ini dan jawab dalam bahasa Indonesia. Gunakan teks biasa. Jangan gunakan simbol bintang."
-        },
-        {
-          type: "image_url",
-          image_url: {
-            url: image
-          }
-        }
-      ];
-    }
-
-    // FILE
-    if (fileData) {
-      const nama = fileName || "file";
-      const tipe = fileType || "";
-
-      // GAMBAR
-      if (tipe.startsWith("image/")) {
-        userContent = [
-          {
-            type: "text",
-            text:
-              "Baca dan analisis file gambar " +
-              nama +
-              ". Jawab dalam bahasa Indonesia dengan jelas. Jangan gunakan simbol bintang."
-          },
-          {
-            type: "image_url",
-            image_url: {
-              url: fileData
-            }
-          }
-        ];
-      }
-
-      // PDF
-      else if (
-        tipe === "application/pdf" ||
-        nama.toLowerCase().endsWith(".pdf")
-      ) {
-        userContent = [
-          {
-            type: "text",
-            text:
-              "Baca file PDF bernama " +
-              nama +
-              ". Jelaskan dan jawab isi atau pertanyaan dari file tersebut dalam bahasa Indonesia. Jangan gunakan Markdown dan jangan gunakan simbol bintang."
-          },
-          {
-            type: "file",
-            file: {
-              filename: nama,
-              file_data: fileData
-            }
-          }
-        ];
-      }
-
-      // FILE TEKS
-      else if (
-        tipe.startsWith("text/") ||
-        nama.toLowerCase().endsWith(".txt") ||
-        nama.toLowerCase().endsWith(".csv") ||
-        nama.toLowerCase().endsWith(".html") ||
-        nama.toLowerCase().endsWith(".css") ||
-        nama.toLowerCase().endsWith(".js") ||
-        nama.toLowerCase().endsWith(".json")
-      ) {
-        const bagian = fileData.split(",")[1] || "";
-
-        const isiFile = Buffer.from(
-          bagian,
-          "base64"
-        ).toString("utf8");
-
-        userContent =
-          "Baca dan analisis file berikut.\n\n" +
-          "Nama file: " +
-          nama +
-          "\n\nIsi file:\n" +
-          isiFile;
-      }
-
-      // FILE LAIN
-      else {
-        userContent =
-          "Saya mengunggah file bernama " +
-          nama +
-          ". Jenis file: " +
-          tipe +
-          ". Jelaskan isi atau kegunaan file tersebut jika dapat diproses.";
-      }
+    if (fileName) {
+      prompt += "\nNama file: " + fileName;
     }
 
     const response = await fetch(
-      "https://openrouter.ai/api/v1/chat/completions",
+      "https://api.cloudflare.com/client/v4/accounts/" +
+        accountId +
+        "/ai/run/@cf/meta/llama-3.1-8b-instruct-fp8",
       {
         method: "POST",
-
         headers: {
-          "Authorization": "Bearer " + apiKey,
-          "Content-Type": "application/json",
-          "X-Title": "AI Smekensix"
+          "Authorization": "Bearer " + token,
+          "Content-Type": "application/json"
         },
-
         body: JSON.stringify({
-          model: model,
-
           messages: [
             {
               role: "system",
               content:
-                "Kamu adalah AI Smekensix buatan Reno. Jawab dalam bahasa Indonesia dengan jelas dan membantu. Gunakan teks biasa. Jangan gunakan Markdown. Jangan gunakan tanda bintang atau simbol bintang."
+                "Kamu adalah AI Smekensix buatan Reno. Jawab dengan jelas, ramah, dan membantu dalam bahasa Indonesia. Gunakan teks biasa tanpa simbol bintang."
             },
             {
               role: "user",
-              content: userContent
+              content: prompt
             }
           ],
-
-          plugins: [
-            {
-              id: "file-parser"
-            }
-          ]
+          max_tokens: 512
         })
       }
     );
 
     const data = await response.json();
 
-    if (!response.ok) {
-      return res.status(response.status).json({
+    if (!response.ok || !data.success) {
+      return res.status(502).json({
         error:
-          data?.error?.message ||
-          "OpenRouter mengalami masalah"
+          data.errors?.map(e => e.message).join(", ") ||
+          "Cloudflare AI gagal menjawab"
       });
     }
 
-    let reply =
-      data?.choices?.[0]?.message?.content ||
-      "AI tidak memberikan jawaban.";
+    let reply = data.result?.response || "AI belum memberikan jawaban.";
 
-    // HAPUS SEMUA SIMBOL BINTANG
     reply = String(reply).replace(
       /[*＊★☆✱✲✳✴✵✶✷✸✹✺✻✼✽✾✿]/g,
       ""
@@ -203,9 +96,7 @@ module.exports = async (req, res) => {
     console.error(error);
 
     return res.status(500).json({
-      error:
-        error?.message ||
-        "Server AI Smekensix mengalami kesalahan"
+      error: "Server AI Smekensix mengalami kesalahan"
     });
   }
 };
